@@ -11,29 +11,8 @@
     <meta http-equiv='expires' content='0'> 
     <meta http-equiv='pragma' content='no-cache'>
     <title>The Book Club</title>
-    <style>
-        table {
-          border-collapse: collapse;
-          margin-left: auto;
-          margin-right: auto;
-          font-size: 0.9em;
-          font-family: sans-serif;
-          min-width: 400px;
-          box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px 15px;
-            text-align: left;
-        }
-        th {
-            cursor: pointer;
-            background-color: #009879;
-            color: #ffffff;
-            text-align: left;
-        }
-        h1 { font-family: 'Enriqueta', arial, serif; line-height: 1.25; margin: 0 0 10px; font-size: 40px; font-weight: bold; text-align: center; }
-    </style>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./css/books.css">
 </head>
 <body>
 
@@ -58,104 +37,7 @@
     <tbody id="tableBody"></tbody>
 </table>
 
-<script>
-    // Example JSON data with Book Title and Book Author columns
-    var jsonData = [
-        { "Book Title": "The Aurora Antidote", "Book Author": "ELA Hugh", "Best": "0", "Worst": "0", "Meetup Date": "2025-06-09", "Meetup Place": "Neil and Noora's", "Mike": "Worst", "Maryse": "DNF", "Neil": "Worst", "Noora": "Best", "Justin": "n/a", "Cat": "DNF" },
-        { "Book Title": "I Am Legend", "Book Author": "Richard Matheson", "Best": "0", "Worst": "0", "Meetup Date": "2025-03-17", "Meetup Place": "Neil and Noora's", "Mike": "Best", "Maryse": "Best", "Neil": "Worst", "Noora": "Worst", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "Rare Flavours", "Book Author": "Ram V", "Best": "0", "Worst": "0", "Meetup Date": "2025-01-22", "Meetup Place": "Mike and Maryse's", "Mike": "Best", "Maryse": "Best", "Neil": "Worst", "Noora": "Worst", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "Shubeik Lubeik", "Book Author": "Deena Mohamed", "Best": "0", "Worst": "0", "Meetup Date": "2024-04-15", "Meetup Place": "Justin and Cat's", "Mike": "Best", "Maryse": "Best", "Neil": "Best", "Noora": "Best", "Justin": "Worst", "Cat": "Best" },
-        { "Book Title": "The Thursday Murder Club", "Book Author": "Richard Osman", "Best": "0", "Worst": "0", "Meetup Date": "2024-07-31", "Meetup Place": "Altitude Climbing Gym - Kanata", "Mike": "Best", "Maryse": "Worst", "Neil": "Worst", "Noora": "Worst", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "The Three-Body Problem", "Book Author": "Cixin Liu", "Best": "0", "Worst": "0", "Meetup Date": "2024-03-13", "Meetup Place": "Mike and Maryse's", "Mike": "Best", "Maryse": "Best", "Neil": "Best", "Noora": "Worst", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "The Immortalists", "Book Author": "Chloe Benjamin", "Best": "0", "Worst": "0", "Meetup Date": "2024-01-31", "Meetup Place": "Beyond the Pale", "Mike": "Best", "Maryse": "Best", "Neil": "Best", "Noora": "Worst", "Justin": "Worst", "Cat": "N/A" },
-        { "Book Title": "In the Lives of Puppets", "Book Author": "T.J. Klune", "Best": "0", "Worst": "0", "Meetup Date": "2024-01-31", "Meetup Place": "Beyond the Pale", "Mike": "Worst", "Maryse": "Worst", "Neil": "Worst", "Noora": "Worst", "Justin": "Worst", "Cat": "Best" },
-        { "Book Title": "What Moves the Dead", "Book Author": "T. Kingfisher", "Best": "0", "Worst": "0", "Meetup Date": "2023-08-01", "Meetup Place": "El Camino Elgin", "Mike": "Best", "Maryse": "Worst", "Neil": "Best", "Noora": "Best", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "Bear and the Nightingale", "Book Author": "Katherine Arden", "Best": "0", "Worst": "0", "Meetup Date": "2023-05-31", "Meetup Place": "Heart and Crown Preston", "Mike": "Best", "Maryse": "Best", "Neil": "Worst", "Noora": "Best", "Justin": "Best", "Cat": "Best" },
-        { "Book Title": "Kaiju Preservation Society", "Book Author": "John Scalzi ", "Best": "0", "Worst": "0", "Meetup Date": "2023-05-03", "Meetup Place": "Clocktower Bank St", "Mike": "Worst", "Maryse": "Worst", "Neil": "Worst", "Noora": "Worst", "Justin": "Worst", "Cat": "Worst" },
-        { "Book Title": "Now You See Us", "Book Author": "Balli Kaur Jaswal", "Best": "0", "Worst": "0", "Meetup Date": "2023-04-04", "Meetup Place": "Beyond the Pale", "Mike": "Best", "Maryse": "Best", "Neil": "Best", "Noora": "N/A", "Justin": "Worst", "Cat": "Best" },
-        { "Book Title": "Station Eleven", "Book Author": "Emily St. John Mandel", "Best": "0", "Worst": "0", "Meetup Date": "2023-03-15", "Meetup Place": "Mill St", "Mike": "Best", "Maryse": "Worst", "Neil": "Worst", "Noora": "N/A", "Justin": "Worst", "Cat": "Best" },
-        // Add more objects as needed
-    ];
-
-    // Function to generate table rows from JSON data
-    function generateTableRows(data) {
-        var tableBody = document.getElementById("tableBody");
-        tableBody.innerHTML = ""; // Clear existing rows
-
-        data.forEach(function (item) {
-            var row = document.createElement("tr");
-
-            // Calculate Best and Worst counts
-            var bestCount = 0;
-            var worstCount = 0;
-
-            for (var key in item) { // Iterate through to count Bests and Worsts
-                if (item[key] === "Best") {
-                    bestCount++;
-                } else if (item[key] === "Worst") {
-                    worstCount++;
-                }
-            }
-
-            // Add data cells
-            for (var key in item) {
-                var cell = document.createElement("td");
-                cell.textContent = (key === "Best") ? bestCount : (key === "Worst") ? worstCount : item[key];
-                row.appendChild(cell);
-            }
-
-            tableBody.appendChild(row);
-        });
-    }
-
-    // Initial population of the table
-    generateTableRows(jsonData);
-
-    function sortTable(columnIndex) {
-        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        table = document.getElementById("myTable");
-        switching = true;
-        // Set the sorting direction to ascending by default
-        dir = "asc";
-
-        while (switching) {
-            switching = false;
-            rows = table.rows;
-
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("td")[columnIndex];
-                y = rows[i + 1].getElementsByTagName("td")[columnIndex];
-
-                var xValue = isNaN(x.textContent) ? x.textContent.toLowerCase() : parseFloat(x.textContent);
-                var yValue = isNaN(y.textContent) ? y.textContent.toLowerCase() : parseFloat(y.textContent);
-
-                if (dir === "asc") {
-                    if (xValue > yValue) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir === "desc") {
-                    if (xValue < yValue) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-            }
-
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount++;
-            } else {
-                if (switchcount === 0 && dir === "asc") {
-                    dir = "desc";
-                    switching = true;
-                }
-            }
-        }
-    }
-</script>
+<script src="./js/books.js"></script>
 
 </body>
 </html>
