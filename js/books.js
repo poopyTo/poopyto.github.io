@@ -11,7 +11,7 @@ let jsonData = [
     "Maryse": "DNF",
     "Neil": "Worst",
     "Noora": "Best",
-    "Justin": "n/a",
+    "Justin": "N/A",
     "Cat": "DNF"
   },
   {
@@ -106,7 +106,7 @@ let jsonData = [
     "Meetup Date": "2024-01-31",
     "Meetup Place": "Beyond the Pale",
     "Mike": "Worst",
-    "Maryse": "Worst",
+    "Maryse": "DNF",
     "Neil": "Worst",
     "Noora": "Worst",
     "Justin": "Worst",
@@ -184,8 +184,6 @@ let jsonData = [
   }
 ];
 
-generateTableRows(jsonData);
-
 function generateTableRows(data) {
   const tableBody = document.getElementById("tableBody");
   tableBody.innerHTML = "";
@@ -259,3 +257,134 @@ function sortTable(columnIndex) {
     }
   }
 }
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + " ";
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line.trim(), x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+
+function drawChart(data) {
+  const canvas = document.getElementById("bookChart");
+  if (!canvas) {
+    console.error("Canvas element not found");
+  } else {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Canvas context not available");
+    } else {
+      console.log("Canvas context loaded successfully");
+    }
+  }
+  const ctx = canvas.getContext("2d");
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const barWidth = 20;
+  const gap = 15;
+  const padding = 50;
+  const labelHeight = 20;
+  const columnsPerBook = 3;
+
+  canvas.width = padding * 2 + data.length * (columnsPerBook * barWidth + gap);
+
+  const maxVotes = Math.max(...data.map(book => {
+    let best = 0, worst = 0;
+    participants.forEach(name => {
+      if (book[name] === "Best") best++;
+      if (book[name] === "Worst") worst++;
+    });
+    return Math.max(best, worst);
+  }));
+
+  data.forEach((book, index) => {
+    let best = 0, worst = 0, dnf = 0, na = 0;
+    participants.forEach(name => {
+      if (book[name] === "Best") best++;
+      if (book[name] === "Worst") worst++;
+      if (book[name] === "DNF") dnf++;
+      if (book[name] === "N/A") na++;
+    });
+
+    const x = padding + index * (3 * barWidth + gap);
+    const chartHeight = canvas.height - padding - labelHeight;
+
+    const bestHeight = (best / maxVotes) * chartHeight;
+    const worstHeight = (worst / maxVotes) * chartHeight;
+    const dnfHeight = (dnf / maxVotes) * chartHeight;
+    const naHeight = (na / maxVotes) * chartHeight;
+
+    // Best bar
+    ctx.fillStyle = "#009879";
+    ctx.fillRect(x, canvas.height - padding - bestHeight, barWidth, bestHeight);
+
+    // Worst bar
+    const worstY = canvas.height - padding - worstHeight;
+    ctx.fillStyle = "#d9534f";
+    ctx.fillRect(x + barWidth, worstY, barWidth, worstHeight);
+
+    // DNF stacked on top
+    const dnfY = worstY - dnfHeight;
+    ctx.fillStyle = "#A020F0";
+    ctx.fillRect(x + barWidth, dnfY, barWidth, dnfHeight);
+
+    // N/A bar
+    ctx.fillStyle = "#999"; // Neutral gray
+    ctx.fillRect(x + barWidth * 2, canvas.height - padding - naHeight, barWidth, naHeight);
+
+    // Optional: Label on top of DNF stack
+    // if (dnf > 0) {
+    //   ctx.fillStyle = "#A020F0";
+    //   ctx.font = "bold 14px sans-serif";
+    //   ctx.textAlign = "center";
+    //   ctx.textBaseline = "bottom";
+    //   ctx.fillText("DNF", x + barWidth * 1.5, dnfY - 4);
+    // }
+
+    // Book title label
+    ctx.fillStyle = "#000";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+
+    const title = book["Book Title"];
+    const labelX = x + barWidth * 1.5;
+    const labelY = canvas.height - 30;
+    const maxLabelWidth = 2 * barWidth + gap - 4;
+    const lineHeight = 14;
+
+    wrapText(ctx, title, labelX, labelY, maxLabelWidth, lineHeight);
+  });
+
+  // Y-axis labels
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "right";
+  ctx.font = "12px sans-serif";
+  for (let i = 0; i <= maxVotes; i++) {
+    const y = canvas.height - padding - (i / maxVotes) * (canvas.height - padding - labelHeight);
+    ctx.fillText(i, padding - 10, y + 4);
+    ctx.beginPath();
+    ctx.moveTo(padding - 5, y);
+    ctx.lineTo(canvas.width - padding / 2, y);
+    ctx.strokeStyle = "#ccc";
+    ctx.stroke();
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  generateTableRows(jsonData);
+  drawChart(jsonData);
+});
