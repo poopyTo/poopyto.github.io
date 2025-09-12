@@ -1,5 +1,19 @@
 const participants = ["Mike", "Maryse", "Neil", "Noora", "Justin", "Cat"];
 let jsonData = [
+    {
+    "Book Title": "The Midnight Library",
+    "Book Author": "Matt Haig",
+    "Best": "0",
+    "Worst": "0",
+    "Meetup Date": "2025-09-04",
+    "Meetup Place": "Mike and Maryse's",
+    "Mike": "Best",
+    "Maryse": "Best",
+    "Neil": "Worst",
+    "Noora": "Worst",
+    "Justin": "Worst",
+    "Cat": "Worst"
+  },
   {
     "Book Title": "The Aurora Antidote",
     "Book Author": "ELA Hugh",
