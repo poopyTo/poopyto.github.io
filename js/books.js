@@ -123,7 +123,7 @@ let jsonData = [
     "Maryse": "DNF",
     "Neil": "Worst",
     "Noora": "Worst",
-    "Justin": "Worst",
+    "Justin": "DNF",
     "Cat": "Best"
   },
   {
