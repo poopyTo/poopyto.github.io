@@ -397,6 +397,10 @@ let chartInstance = null;
 function drawChart(data) {
   const ctx = document.getElementById("bookChart").getContext("2d");
 
+  // Make width scale with number of books
+  const minBarWidth = 80; // tweak this for spacing
+  canvas.width = data.length * minBarWidth;
+
   // Destroy existing chart (important when re-sorting)
   if (chartInstance) {
     chartInstance.destroy();
@@ -420,7 +424,8 @@ function drawChart(data) {
         {
           label: "Best",
           data: bestData,
-          backgroundColor: "#009879"
+          backgroundColor: "#009879",
+          barThickness: 20
         },
         {
           label: "Worst",
@@ -440,6 +445,7 @@ function drawChart(data) {
       ]
     },
     options: {
+      indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
 
