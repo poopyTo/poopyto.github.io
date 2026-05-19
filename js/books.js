@@ -445,7 +445,6 @@ function drawChart(data) {
       ]
     },
     options: {
-      indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
 
