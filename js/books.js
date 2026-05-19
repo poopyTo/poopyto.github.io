@@ -392,80 +392,92 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 /* =========================
    CHART
 ========================= */
+let chartInstance = null;
+
 function drawChart(data) {
-  const canvas = document.getElementById("bookChart");
-  if (!canvas) return;
+  const ctx = document.getElementById("bookChart").getContext("2d");
 
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const { barWidth, gap, padding, labelHeight } = CHART;
-  const columnsPerBook = 3;
-
-  canvas.width = padding * 2 + data.length * (columnsPerBook * barWidth + gap);
-
-  const maxVotes = Math.max(
-    ...data.map(book =>
-      Math.max(book.counts.best, book.counts.worst)
-    )
-  );
-
-  const chartHeight = canvas.height - padding - labelHeight;
-
-  data.forEach((book, index) => {
-    const { best, worst, dnf, na } = book.counts;
-
-    const x = padding + index * (3 * barWidth + gap);
-
-    const bestHeight = (best / maxVotes) * chartHeight;
-    const worstHeight = (worst / maxVotes) * chartHeight;
-    const dnfHeight = (dnf / maxVotes) * chartHeight;
-    const naHeight = (na / maxVotes) * chartHeight;
-
-    // Best
-    drawBar(ctx, x, canvas.height - padding - bestHeight, barWidth, bestHeight, COLORS.best);
-
-    // Worst
-    const worstY = canvas.height - padding - worstHeight;
-    drawBar(ctx, x + barWidth, worstY, barWidth, worstHeight, COLORS.worst);
-
-    // DNF (stacked)
-    drawBar(ctx, x + barWidth, worstY - dnfHeight, barWidth, dnfHeight, COLORS.dnf);
-
-    // N/A
-    drawBar(ctx, x + barWidth * 2, canvas.height - padding - naHeight, barWidth, naHeight, COLORS.na);
-
-    // Label
-    ctx.fillStyle = COLORS.text;
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-
-    wrapText(
-      ctx,
-      book["Book Title"],
-      x + barWidth * 1.5,
-      canvas.height - 30,
-      barWidth * 2 + gap - 4,
-      14
-    );
+  // Destroy existing chart (important when re-sorting)
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+  
+  const labels = data.map(book => {
+    const title = book.title || book["Book Title"];
+    return title.length > 25 ? title.slice(0, 25) + "…" : title;
   });
 
-  // Y-axis + grid
-  ctx.fillStyle = COLORS.text;
-  ctx.textAlign = "right";
-  ctx.font = "12px sans-serif";
+  const bestData = data.map(book => book.counts.best);
+  const worstData = data.map(book => book.counts.worst);
+  const dnfData = data.map(book => book.counts.dnf);
+  const naData = data.map(book => book.counts.na);
 
-  for (let i = 0; i <= maxVotes; i++) {
-    const y = canvas.height - padding - (i / maxVotes) * chartHeight;
+  chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Best",
+          data: bestData,
+          backgroundColor: "#009879"
+        },
+        {
+          label: "Worst",
+          data: worstData,
+          backgroundColor: "#d9534f"
+        },
+        {
+          label: "DNF",
+          data: dnfData,
+          backgroundColor: "#A020F0"
+        },
+        {
+          label: "N/A",
+          data: naData,
+          backgroundColor: "#999"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
 
-    ctx.fillText(i, padding - 10, y + 4);
+      plugins: {
+        legend: {
+          position: "top"
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
 
-    ctx.beginPath();
-    ctx.moveTo(padding - 5, y);
-    ctx.lineTo(canvas.width - padding / 2, y);
-    ctx.strokeStyle = COLORS.grid;
-    ctx.stroke();
-  }
+          callbacks: {
+            title: function(context) {
+              return data[context[0].dataIndex]["Book Title"];
+            }
+          }
+        }
+      },
+
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            autoSkip: false,
+            maxRotation: 45,
+            minRotation: 20
+          }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
 }
 
 function sortTable(columnIndex) {
