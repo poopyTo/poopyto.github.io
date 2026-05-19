@@ -399,7 +399,7 @@ function drawChart(data) {
 
   // Make width scale with number of books
   const minBarWidth = 80; // tweak this for spacing
-  canvas.width = data.length * minBarWidth;
+  ctx.width = data.length * minBarWidth;
 
   // Destroy existing chart (important when re-sorting)
   if (chartInstance) {
