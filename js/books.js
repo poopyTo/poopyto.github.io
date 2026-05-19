@@ -395,11 +395,11 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 let chartInstance = null;
 
 function drawChart(data) {
-  const ctx = document.getElementById("bookChart").getContext("2d");
+  const ctx = document.getElementById("bookChart");
+  const table = document.getElementById("myTable");
+  const tableWidth = table.getBoundingClientRect().width;
 
-  // Make width scale with number of books
-  const minBarWidth = 80; // tweak this for spacing
-  ctx.width = data.length * minBarWidth;
+  ctx.width = tableWidth;
 
   // Destroy existing chart (important when re-sorting)
   if (chartInstance) {
@@ -424,8 +424,7 @@ function drawChart(data) {
         {
           label: "Best",
           data: bestData,
-          backgroundColor: "#009879",
-          barThickness: 20
+          backgroundColor: "#009879"
         },
         {
           label: "Worst",
@@ -445,7 +444,7 @@ function drawChart(data) {
       ]
     },
     options: {
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
 
       plugins: {
@@ -469,8 +468,8 @@ function drawChart(data) {
           stacked: true,
           ticks: {
             autoSkip: false,
-            maxRotation: 45,
-            minRotation: 20
+            maxRotation: 90,
+            minRotation: 90
           }
         },
         y: {
@@ -504,7 +503,10 @@ function sortTable(columnIndex) {
 ========================= */
 function refreshUI() {
   generateTableRows(currentData);
-  drawChart(currentData);
+  
+  requestAnimationFrame(() => {
+    drawChart(currentData);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
