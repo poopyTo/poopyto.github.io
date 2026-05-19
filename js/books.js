@@ -1,4 +1,21 @@
+
 const participants = ["Mike", "Maryse", "Neil", "Noora", "Justin", "Cat"];
+
+let currentSort = {
+  column: null,
+  asc: true
+};
+
+const columnMap = [
+  "Book Title",     // 0
+  "Book Author",    // 1
+  "Best",           // 2
+  "Worst",          // 3
+  "Meetup Date",    // 4
+  "Meetup Place",   // 5
+  ...participants   // 6+
+];
+
 let jsonData = [
     {
     "Book Title": "Game Changer",
@@ -240,6 +257,54 @@ let jsonData = [
   }
 ];
 
+/* =========================
+   CONFIG
+========================= */
+const COLORS = {
+  best: "#009879",
+  worst: "#d9534f",
+  dnf: "#A020F0",
+  na: "#999",
+  grid: "#ccc",
+  text: "#000"
+};
+
+const CHART = {
+  barWidth: 20,
+  gap: 15,
+  padding: 50,
+  labelHeight: 20
+};
+
+/* =========================
+   DATA HELPERS
+========================= */
+function countVotes(book) {
+  const counts = { best: 0, worst: 0, dnf: 0, na: 0 };
+
+  participants.forEach(name => {
+    const vote = book[name];
+    if (vote === "Best") counts.best++;
+    else if (vote === "Worst") counts.worst++;
+    else if (vote === "DNF") counts.dnf++;
+    else if (vote === "N/A") counts.na++;
+  });
+
+  return counts;
+}
+
+function prepareData(data) {
+  return data.map(book => ({
+    ...book,
+    counts: countVotes(book)
+  }));
+}
+
+
+
+/* =========================
+   TABLE
+========================= */
 function generateTableRows(data) {
   const tableBody = document.getElementById("tableBody");
   tableBody.innerHTML = "";
@@ -247,28 +312,19 @@ function generateTableRows(data) {
   data.forEach(item => {
     const row = document.createElement("tr");
 
-    let bestCount = 0;
-    let worstCount = 0;
-
-    participants.forEach(name => {
-      if (item[name] === "Best") bestCount++;
-      if (item[name] === "Worst") worstCount++;
-    });
-
-    const keys = [
-      "Book Title", "Book Author", "Best", "Worst",
-      "Meetup Date", "Meetup Place", ...participants
+    const cells = [
+      item["Book Title"],
+      item["Book Author"],
+      item.counts.best,
+      item.counts.worst,
+      item["Meetup Date"],
+      item["Meetup Place"],
+      ...participants.map(p => item[p] || "")
     ];
 
-    keys.forEach(key => {
+    cells.forEach(value => {
       const cell = document.createElement("td");
-      if (key === "Best") {
-        cell.textContent = bestCount;
-      } else if (key === "Worst") {
-        cell.textContent = worstCount;
-      } else {
-        cell.textContent = item[key] || "";
-      }
+      cell.textContent = value;
       row.appendChild(cell);
     });
 
@@ -276,171 +332,165 @@ function generateTableRows(data) {
   });
 }
 
-function sortTable(columnIndex) {
-  const table = document.getElementById("myTable");
-  let switching = true;
-  let dir = "asc";
-  let switchcount = 0;
-  let shouldSwitch = false;
+/* =========================
+   SORTING
+========================= */
+let currentData = [];
 
-  while (switching) {
-    switching = false;
-    const rows = table.rows;
+function sortData(key, asc = true) {
+  currentData.sort((a, b) => {
+    let valA, valB;
 
-    for (i = 1; i < rows.length - 1; i++) {
-      shouldSwitch = false;
-      const x = rows[i].getElementsByTagName("td")[columnIndex];
-      const y = rows[i + 1].getElementsByTagName("td")[columnIndex];
-
-      const xValue = isNaN(x.textContent) ? x.textContent.toLowerCase() : parseFloat(x.textContent);
-      const yValue = isNaN(y.textContent) ? y.textContent.toLowerCase() : parseFloat(y.textContent);
-
-      if ((dir === "asc" && xValue > yValue) || (dir === "desc" && xValue < yValue)) {
-        shouldSwitch = true;
-        break;
-      }
-    }
-
-    if (shouldSwitch) {
-      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-      switching = true;
-      switchcount++;
+    if (key === "Best" || key === "Worst") {
+      valA = a.counts[key.toLowerCase()];
+      valB = b.counts[key.toLowerCase()];
     } else {
-      if (switchcount === 0 && dir === "asc") {
-        dir = "desc";
-        switching = true;
-      }
+      valA = a[key];
+      valB = b[key];
     }
-  }
+
+    // Normalize values
+    if (!isNaN(valA)) valA = Number(valA);
+    if (!isNaN(valB)) valB = Number(valB);
+
+    if (valA < valB) return asc ? -1 : 1;
+    if (valA > valB) return asc ? 1 : -1;
+    return 0;
+  });
+
+  refreshUI();
+}
+
+/* =========================
+   CHART HELPERS
+========================= */
+function drawBar(ctx, x, y, width, height, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, width, height);
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(" ");
   let line = "";
 
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-    const testWidth = metrics.width;
+  words.forEach((word, index) => {
+    const testLine = line + word + " ";
+    const testWidth = ctx.measureText(testLine).width;
 
-    if (testWidth > maxWidth && n > 0) {
+    if (testWidth > maxWidth && index > 0) {
       ctx.fillText(line.trim(), x, y);
-      line = words[n] + " ";
+      line = word + " ";
       y += lineHeight;
     } else {
       line = testLine;
     }
-  }
+  });
+
   ctx.fillText(line.trim(), x, y);
 }
 
+/* =========================
+   CHART
+========================= */
 function drawChart(data) {
   const canvas = document.getElementById("bookChart");
-  if (!canvas) {
-    console.error("Canvas element not found");
-  } else {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.error("Canvas context not available");
-    } else {
-      console.log("Canvas context loaded successfully");
-    }
-  }
-  const ctx = canvas.getContext("2d");
+  if (!canvas) return;
 
-  // Clear canvas
+  const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const barWidth = 20;
-  const gap = 15;
-  const padding = 50;
-  const labelHeight = 20;
+  const { barWidth, gap, padding, labelHeight } = CHART;
   const columnsPerBook = 3;
 
   canvas.width = padding * 2 + data.length * (columnsPerBook * barWidth + gap);
 
-  const maxVotes = Math.max(...data.map(book => {
-    let best = 0, worst = 0;
-    participants.forEach(name => {
-      if (book[name] === "Best") best++;
-      if (book[name] === "Worst") worst++;
-    });
-    return Math.max(best, worst);
-  }));
+  const maxVotes = Math.max(
+    ...data.map(book =>
+      Math.max(book.counts.best, book.counts.worst)
+    )
+  );
+
+  const chartHeight = canvas.height - padding - labelHeight;
 
   data.forEach((book, index) => {
-    let best = 0, worst = 0, dnf = 0, na = 0;
-    participants.forEach(name => {
-      if (book[name] === "Best") best++;
-      if (book[name] === "Worst") worst++;
-      if (book[name] === "DNF") dnf++;
-      if (book[name] === "N/A") na++;
-    });
+    const { best, worst, dnf, na } = book.counts;
 
     const x = padding + index * (3 * barWidth + gap);
-    const chartHeight = canvas.height - padding - labelHeight;
 
     const bestHeight = (best / maxVotes) * chartHeight;
     const worstHeight = (worst / maxVotes) * chartHeight;
     const dnfHeight = (dnf / maxVotes) * chartHeight;
     const naHeight = (na / maxVotes) * chartHeight;
 
-    // Best bar
-    ctx.fillStyle = "#009879";
-    ctx.fillRect(x, canvas.height - padding - bestHeight, barWidth, bestHeight);
+    // Best
+    drawBar(ctx, x, canvas.height - padding - bestHeight, barWidth, bestHeight, COLORS.best);
 
-    // Worst bar
+    // Worst
     const worstY = canvas.height - padding - worstHeight;
-    ctx.fillStyle = "#d9534f";
-    ctx.fillRect(x + barWidth, worstY, barWidth, worstHeight);
+    drawBar(ctx, x + barWidth, worstY, barWidth, worstHeight, COLORS.worst);
 
-    // DNF stacked on top
-    const dnfY = worstY - dnfHeight;
-    ctx.fillStyle = "#A020F0";
-    ctx.fillRect(x + barWidth, dnfY, barWidth, dnfHeight);
+    // DNF (stacked)
+    drawBar(ctx, x + barWidth, worstY - dnfHeight, barWidth, dnfHeight, COLORS.dnf);
 
-    // N/A bar
-    ctx.fillStyle = "#999"; // Neutral gray
-    ctx.fillRect(x + barWidth * 2, canvas.height - padding - naHeight, barWidth, naHeight);
+    // N/A
+    drawBar(ctx, x + barWidth * 2, canvas.height - padding - naHeight, barWidth, naHeight, COLORS.na);
 
-    // Optional: Label on top of DNF stack
-    // if (dnf > 0) {
-    //   ctx.fillStyle = "#A020F0";
-    //   ctx.font = "bold 14px sans-serif";
-    //   ctx.textAlign = "center";
-    //   ctx.textBaseline = "bottom";
-    //   ctx.fillText("DNF", x + barWidth * 1.5, dnfY - 4);
-    // }
-
-    // Book title label
-    ctx.fillStyle = "#000";
+    // Label
+    ctx.fillStyle = COLORS.text;
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
 
-    const title = book["Book Title"];
-    const labelX = x + barWidth * 1.5;
-    const labelY = canvas.height - 30;
-    const maxLabelWidth = 2 * barWidth + gap - 4;
-    const lineHeight = 14;
-
-    wrapText(ctx, title, labelX, labelY, maxLabelWidth, lineHeight);
+    wrapText(
+      ctx,
+      book["Book Title"],
+      x + barWidth * 1.5,
+      canvas.height - 30,
+      barWidth * 2 + gap - 4,
+      14
+    );
   });
 
-  // Y-axis labels
-  ctx.fillStyle = "#000";
+  // Y-axis + grid
+  ctx.fillStyle = COLORS.text;
   ctx.textAlign = "right";
   ctx.font = "12px sans-serif";
+
   for (let i = 0; i <= maxVotes; i++) {
-    const y = canvas.height - padding - (i / maxVotes) * (canvas.height - padding - labelHeight);
+    const y = canvas.height - padding - (i / maxVotes) * chartHeight;
+
     ctx.fillText(i, padding - 10, y + 4);
+
     ctx.beginPath();
     ctx.moveTo(padding - 5, y);
     ctx.lineTo(canvas.width - padding / 2, y);
-    ctx.strokeStyle = "#ccc";
+    ctx.strokeStyle = COLORS.grid;
     ctx.stroke();
   }
 }
+
+function sortTable(columnIndex) {
+  const key = columnMap[columnIndex];
+
+  // Toggle direction if same column
+  if (currentSort.column === key) {
+    currentSort.asc = !currentSort.asc;
+  } else {
+    currentSort.column = key;
+    currentSort.asc = true;
+  }
+
+  sortData(key, currentSort.asc);
+}
+
+/* =========================
+   APP INIT
+========================= */
+function refreshUI() {
+  generateTableRows(currentData);
+  drawChart(currentData);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  generateTableRows(jsonData);
-  drawChart(jsonData);
+  currentData = prepareData(jsonData);
+  refreshUI();
 });
