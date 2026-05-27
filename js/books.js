@@ -18,6 +18,20 @@ const columnMap = [
 
 let jsonData = [
     {
+    "Book Title": "Demon Copperhead",
+    "Book Author": "Barbara Kingsolver",
+    "Best": "0",
+    "Worst": "0",
+    "Meetup Date": "2026-05-26",
+    "Meetup Place": "Spark Beer and Pizza",
+    "Mike": "Best",
+    "Maryse": "Best",
+    "Neil": "Best",
+    "Noora": "Best",
+    "Justin": "Best",
+    "Cat": "Best
+    },
+    {
     "Book Title": "Game Changer",
     "Book Author": "Rachel Reid",
     "Best": "0",
@@ -193,7 +207,7 @@ let jsonData = [
     "Meetup Date": "2023-08-01",
     "Meetup Place": "El Camino Elgin",
     "Mike": "Best",
-    "Maryse": "Worst",
+    "Maryse": "DNF",
     "Neil": "Best",
     "Noora": "Best",
     "Justin": "Best",
