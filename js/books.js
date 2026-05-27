@@ -29,7 +29,7 @@ let jsonData = [
     "Neil": "Best",
     "Noora": "Best",
     "Justin": "Best",
-    "Cat": "Best
+    "Cat": "Best"
     },
     {
     "Book Title": "Game Changer",
